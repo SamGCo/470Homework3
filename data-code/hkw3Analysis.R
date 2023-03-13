@@ -3,14 +3,14 @@
 cig_prop <- subset(final.data, Year >= 1970 & Year <= 1985) %>% 
   arrange(state, Year) %>% 
   group_by(state) %>% 
-  mutate(cost_change = tax_dollar - lag(tax_dollar, default = first(tax_dollar))) %>%
+  mutate(cost_change = tax_state - lag(tax_state, default = first(tax_state))) %>%
   group_by(Year) %>% 
   summarise(prop_change = sum(cost_change != 0) / n_distinct(state))
 cigPropPlot<-ggplot(cig_prop, aes(x = Year, y = prop_change)) + 
   geom_bar(stat = "identity") + 
-  labs(x = "Year", y = "Proportion of States that Change Taxes", title = "Changes in Cost Proportions by Year")
+  labs(x = "Year", y = "Proportion of States that Change Taxes", title = "Changes in Cost Proportions by Year") + ylim(0,1)
 cigPropPlot
-hw3Q1<-ggsave(filename="cigProp.png",cigPropPlot,width=10)
+hw3Q1<-ggsave(filename="cigProp.png",cigPropPlot,height=10,width=10)
 
 #2 Plot on a single graph the average tax (in 2012 dollars) on cigarettes and the average price of a pack of cigarettes from 1970 to 2018.
 cig_avg <- final.data %>% 
