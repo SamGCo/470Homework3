@@ -22,7 +22,7 @@ cig_avg <- final.data %>%
 cigCost<-ggplot(cig_avg,aes(x=Year))+
   geom_line(aes(y=avg_tax,color='Average Tax'))+
   geom_line(aes(y=avg_cost,color='Average Cigarette Cost'))+
-  ggtitle("Average tax and cost per year")+
+  ggtitle("Average Tax and Cost Per Year")+
   xlab("Year")+
   ylab("Price")
 cigCost  
@@ -60,7 +60,7 @@ bot_states <- cig_diff %>%
   arrange((diff_cost)) %>% 
   head(5)
 
-botStatesDF<-subset(final.data,Year!=2019 &state=="Missouri"|state=="Georgia"|state=="North Dakota"|state=="North Carolina"|state=="Tennessee")
+botStatesDF<-subset(final.data,Year!=2019 &state=="Missouri"|state=="Georgia"|state=="North Dakota"|state=="Alabama"|state=="Tennessee")
 botStatesDF<-botStatesDF %>%
   group_by(state)
 botCigPerCapita<-ggplot(botStatesDF,aes(x=Year,y=sales_per_capita,color=state,group=state))+
@@ -94,35 +94,37 @@ summary(regres6)
 
 #7
 library(AER)
+library(fixest)
 prob6$totalTax<-prob6$tax_dollar+prob6$tax_state
-regres7<-ivreg(log(sales_per_capita)~log(price_cpi) |totalTax ,data=prob6)
+prob6$tax2012<-prob6$tax_dollar*(229.5939/prob6$index)
+regres7<- feols(log(sales_per_capita) ~ 1 | log(price_cpi) ~ (tax2012), data = prob6)
 summary(regres7)
 # These results are similar to the previous, except the effect seems to be stronger when using an instrumental variable. Both coefficients are negative and are statistically significant in both estimates, but when using an IV we see a stronger effect. This makes sense as it takes into account a difference in something external affecting price that does not directly affect a change in consumption.
 
 #8
 
-firstStage1<-lm(cost_per_pack~totalTax,data=prob6)
+firstStage1<-feols(log(price_cpi)~tax2012,data=prob6)
 summary(firstStage1)
-reducedForm1<-lm(sales_per_capita~totalTax,data=prob6)
+reducedForm1<-lm(log(sales_per_capita)~tax2012,data=prob6)
 summary(reducedForm1)
 #9
 
 prob9<-subset(final.data, Year >= 1991 & Year <= 2015)
-regres9<-lm(log(sales_per_capita)~log(cost_per_pack),data=prob9)
+regres9<-feols(log(sales_per_capita)~log(price_cpi),data=prob9)
 summary(regres9)
 # This shows that as the log of the price of a pack of cigarettes increases, the log of the sales per capita of cigarette packs decreases by .66 packs per capita. This would mean that cigarettes are an elastic good.
 
-
+prob9$tax2012<-prob9$tax_dollar*(229.5939/prob9$index)
 prob9$totalTax<-prob9$tax_dollar+prob9$tax_state
-regres9.2<-ivreg(log(sales_per_capita)~log(cost_per_pack) |totalTax ,data=prob9)
+regres9.2<-feols(log(sales_per_capita)~1|log(price_cpi) ~tax2012 ,data=prob9)
 summary(regres9.2)
 # These results are similar to the previous, except the effect seems to be stronger when using an instrumental variable. Both coefficients are negative and are statistically significant in both estimates, but when using an IV we see a stronger effect. This makes sense as it takes into account a difference in something external affecting price that does not directly affect a change in consumption.
 
 
 
-firstStage2<-lm(cost_per_pack~totalTax,data=prob9)
+firstStage2<-feols(log(price_cpi)~tax2012,data=prob9)
 summary(firstStage2)
-reducedForm2<-lm(sales_per_capita~totalTax,data=prob9)
+reducedForm2<-feols(log(sales_per_capita)~tax2012,data=prob9)
 summary(reducedForm2)
 
 save.image("homework3Workspace.Rdata")
